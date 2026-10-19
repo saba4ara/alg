@@ -1,133 +1,163 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define abs(a) (((a) >= (0)) ? (a) : (-(a)))
 
+#define DEBUG_PRINTS 0
+
+
+
 typedef struct {
 	int N;
 	int K;
-	int** content;
+	char* content;
 } Matrix;
 
+typedef struct {
+	int N;
+	int K;
+	int* content;
+} PrefMatrix;
+
+
+
+static inline char read_bit();
+
+static inline int read_int();
+
 void alloc_matrix(Matrix* m);
+
+void alloc_pref_matrix(PrefMatrix* p);
 
 void fill_matrix(Matrix* m);
 
 void print_matrix(Matrix* m);
 
-void free_matrix(Matrix* m);
+void print_pref_matrix(PrefMatrix* p);
 
-bool is_valid_segment(Matrix* m, int x1, int y1);
+static inline bool is_valid_segment(Matrix* m, int x1, int y1);
 
-void fill_segment_matrix(Matrix* m, Matrix* s);
+void prefix_sum_inplace(Matrix* m, PrefMatrix* p);
 
-void prefix_sum(Matrix* m, Matrix* p);
-
-int region_sum(Matrix* p, int i, int j, int k, int l);
+static inline int region_sum(PrefMatrix* p, int i, int j, int k, int l);
 
 
 
 int main(int argc, char* argv[]) {
-	Matrix m, s, p;
+	Matrix m;
+	PrefMatrix p;	
 
-	if (scanf("%d %d", &m.N, &m.K) != 2) {
-		perror("Didn't get N and K");
-		return 1;
-	}
+	m.N = read_int();
+	m.K = read_int();
 
-	s.N = m.N;
 	p.N = m.N + 1;
 
 	alloc_matrix(&m);
-	alloc_matrix(&s);
-	alloc_matrix(&p);
+	alloc_pref_matrix(&p);
 
-	fill_matrix(&m);
-	printf("N = %d, K = %d\n", m.N, m.K);
-		
-	fill_segment_matrix(&m, &s);
+	fill_matrix(&m);	
+	prefix_sum_inplace(&m, &p);
 
-	prefix_sum(&s, &p);
-
- 	printf("\n");
- 	print_matrix(&m);
- 	printf("\n");
- 	print_matrix(&s);	
- 	printf("\n");
- 	print_matrix(&p);
- 	printf("\n");
+	if (DEBUG_PRINTS) {
+		printf("N = %d, K = %d\n", m.N, m.K);
+ 		printf("\n");
+ 		print_matrix(&m);
+ 		printf("\n");
+ 		print_pref_matrix(&p);
+ 		printf("\n");
+	}
 
 	int max_segments = 0;
 	for (int r = 0; r <= m.N - m.K; ++r) {
 		for (int c = 0; c <= m.N - m.K; ++c) {
-			//printf("OK start window coords: (%d, %d)\n", r, c);
 			int tmp_res = region_sum(&p, r, c, r+m.K-1, c+m.K-1);
 			if (tmp_res > max_segments) max_segments = tmp_res;
-			//printf("sum is %d\n\n", tmp_res); // translated s coords to p coords
 		}
 	}
 
 	printf("%d\n", max_segments);
 
-	free_matrix(&m);	
-	free_matrix(&s);
-	free_matrix(&p);	
+	free(m.content);
+	free(p.content);
 	
 	return 0;
 }
 
 
 
+static inline char read_bit() {
+	int c;
+	while ((c = getchar_unlocked()) != '0' && c != '1' && c != EOF);
+	return (char)(c - '0');
+}
+
+static inline int read_int() {
+	int res = 0;
+	int c = getchar_unlocked();
+
+	while ((c < '0' || c > '9') && c != EOF) c = getchar_unlocked();
+	
+	while (c >= '0' && c <= '9') {
+		res = res * 10 + (c - '0');
+		c = getchar_unlocked();
+	}
+
+	return res;
+}
+
 void alloc_matrix(Matrix* m) {
-	m->content = (int**)malloc(m->N * sizeof(int*));
+	m->content = (char*)calloc(m->N * m->N, sizeof(char));
 	if (!m->content) {
 		perror("Allocation Error");
 		return;
 	}
+}
 
-	for (int i = 0; i < m->N; ++i) {
-		m->content[i] = (int*)calloc(m->N, sizeof(int));
-		if (!m->content[i]) {
-			perror("Allocation Error");
-			free(m->content);
-			return;
-		}
+void alloc_pref_matrix(PrefMatrix* p) {
+	p->content = (int*)calloc(p->N * p->N, sizeof(int));
+	if (!p->content) {
+		perror("Allocation Error");
+		return;
 	}
 }
 
 void fill_matrix(Matrix* m) {
-	int n;
-	for (int i = 0; i < m->N; ++i) {
-		for (int j = 0; j < m->N; ++j) {
-			if (scanf("%d", &n) == 1) m->content[i][j] = n;
+	for (int r = 0; r < m->N; ++r) {
+		for (int c = 0; c < m->N; ++c) {
+			m->content[r * m->N + c] = read_bit();
 		}
 	}
 }
 
 void print_matrix(Matrix* m) {
-	for (int i = 0; i < m->N; ++i) {
-		for (int j = 0; j < m->N; ++j) {
-			printf("%d ", m->content[i][j]);
+	for (int r = 0; r < m->N; ++r) {
+		for (int c = 0; c < m->N; ++c) {
+			printf("%d ", m->content[r * m->N + c]);
 		}
 		printf("\n");
 	}
 }
 
-void free_matrix(Matrix* m) {
-	for (int i = 0; i < m->N; ++i) {
-		free(m->content[i]);
+void print_pref_matrix(PrefMatrix* p) {
+	for (int r = 0; r < p->N; ++r) {
+		for (int c = 0; c < p->N; ++c) {
+			printf("%d ", p->content[r * p->N + c]);
+		}
+		printf("\n");
 	}
-	free(m->content);
 }
 
-bool is_valid_segment(Matrix* m, int x1, int y1) {
+static inline bool is_valid_segment(Matrix* m, int x1, int y1) {
 	int x2 = x1+1;
 	int y2 = y1+1;
 
-	if (x2 >= m->N || y2 >= m->N || m->content[x1][y1] != 1 || m->content[x2][y2] != 1) return false;
+	if (x2 >= m->N || y2 >= m->N || m->content[x1 * m->N + y1] != 1 || m->content[x2 * m->N + y2] != 1) return false;
 
 	int x1_start = max(x1-1, 0);
 	int y1_start = max(y1-1, 0);
@@ -137,11 +167,10 @@ bool is_valid_segment(Matrix* m, int x1, int y1) {
 
 	for (int r = x1_start; r <= x2_end; ++r) {
 		for (int c = y1_start; c <= y2_end; ++c) {
-			if (r == x1 && c == y1 || r == x2 && c == y2 || 
+			if ((r == x1 && c == y1) || (r == x2 && c == y2) || 
                            (r == x1-1 && c == y1+2) || 
 		           (r == x1+2 && c == y1-1)) continue;
-			// printf("checking r = %d, c = %d, num = %d\n", r, c, m->content[r][c]);
-			if (m->content[r][c] == 1) return false;
+			if (m->content[r * m->N + c] == 1) return false;
 		}
 	}
 
@@ -149,28 +178,20 @@ bool is_valid_segment(Matrix* m, int x1, int y1) {
 	
 }
 
-void fill_segment_matrix(Matrix* m, Matrix* s) {
+void prefix_sum_inplace(Matrix* m, PrefMatrix* p) {
 	for (int r = 0; r < m->N; ++r) {
 		for (int c = 0; c < m->N; ++c) {
-			if (is_valid_segment(m, r, c)) s->content[r][c] = 1 ;
-		}
-	}
-}
+			int val = is_valid_segment(m, r, c) ? 1 : 0;
 
-void prefix_sum(Matrix* m, Matrix* p) {
-	for (int r = 1; r < p->N; ++r) {
-		for (int c = 1; c < p->N; ++c) {
-			p->content[r][c] = m->content[r-1][c-1] + p->content[r-1][c] + p->content[r][c-1] - p->content[r-1][c-1];
+			int p_r = r+1;
+			int p_c = c+1;
+			
+			p->content[p_r * p->N + p_c] = val + p->content[r * p->N + p_c] + p->content[p_r * p->N + c] - p->content[r * p->N + c];
 		}
 	}	
-//	print_matrix(p);
 }
 
-int region_sum(Matrix* p, int i, int j, int k, int l) {
-//	printf("starting (i, j) = (%d, %d)\n", i, j);
-//	printf("finishing (k, l) = (%d, %d)\n", k, l);
-//	printf("RETURNING [%d][%d] - [%d][%d] - [%d][%d] + [%d][%d]\n", k, l, i, l, k, j, i, j);
-//	printf("RETURNING    %d   -    %d   -    %d   +    %d\n", p->content[k][l], p->content[i][l], p->content[k][j], p->content[i][j]);
-	return p->content[k][l] - p->content[i][l] - p->content[k][j] + p->content[i][j];
+static inline int region_sum(PrefMatrix* p, int i, int j, int k, int l) {
+	return p->content[k * p->N + l] - p->content[i * p->N + l] - p->content[k * p->N + j] + p->content[i * p->N + j];
 }
 

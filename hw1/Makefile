@@ -2,7 +2,7 @@
 .SILENT: run
 
 CC := gcc
-FLAGS := -Wall -O2
+CFLAGS := -Wall -pedantic -g -O2
 SRCS := $(wildcard *.c)
 OBJS := $(SRCS:%.c=%.o)
 BINS := $(SRCS:%.c=%)
@@ -10,11 +10,11 @@ ARGS := <data/pub01.in
 
 all: $(BINS)
 
-%: %.o
-	$(CC) $(FLAGS) $< -o $@
+$(BINS): $(OBJS)
+	$(CC) $(CFLAGS) $< -o $@
 
-%.o: %.c
-	$(CC) $(FLAGS) -c -o $@ $<
+$(OBJS): $(SRCS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 run: $(BINS)
 	./$(BINS) $(ARGS)
@@ -23,4 +23,8 @@ valgrind: $(BINS)
 	valgrind ./$(BINS) $(ARGS)
 
 clean:
-	rm -rf $(OBJS) $(BINS)
+	rm -rf $(OBJS) $(BINS) *.tar
+
+tar:
+	tar -cvf $(BINS).tar $(SRCS)
+
