@@ -53,3 +53,17 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+
+
+# debug/testing files
+*.in
+*.out
+*.err
+
+# vim
+*.swp
+
+# archives
+*.zip
+*.tar
