@@ -14,9 +14,9 @@ static unsigned char global_best = 0;
 
 static inline char read_bit();
 
-static inline char calc_score(char a, char b, char c);
+static inline unsigned char calc_score(char a, char b, char c);
 
-static inline char find_upper_bound(char ones, char twos, char threes);
+static inline unsigned char find_upper_bound(char ones, char twos, char threes);
 
 void find_max(unsigned char idx, char score_so_far, char ones, char twos, char threes);
 
@@ -64,13 +64,13 @@ static inline char read_bit() {
 	return res;
 }
 
-static inline char calc_score(char a, char b, char c) {
+static inline unsigned char calc_score(char a, char b, char c) {
 	if (a == b && b == c) return 3;
 	if (a == b || b == c || a == c) return 1;
 	return 0;
 }
 
-static inline char find_upper_bound(char ones, char twos, char threes) {
+static inline unsigned char find_upper_bound(char ones, char twos, char threes) {
 	char total_triples = (ones + twos + threes) / 3;
 	char max_three_pts = (ones/3) + (twos/3) + (threes/3);
 
@@ -86,7 +86,7 @@ static inline char find_upper_bound(char ones, char twos, char threes) {
 void find_max(unsigned char idx, char score_so_far, char ones, char twos, char threes) {
 	if (score_so_far > global_best) global_best = score_so_far;
 
-	while (idx < N && grid[idx++] == 0);
+	while (idx < N && grid[idx] == 0) idx++;
 	if (idx >= N) return;
 
 	if (score_so_far + find_upper_bound(ones, twos, threes) <= global_best) return;
