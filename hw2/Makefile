@@ -6,7 +6,7 @@ CFLAGS += -Wall -pedantic -g -O2
 SRCS := $(wildcard *.c)
 OBJS := $(SRCS:%.c=%.o)
 BINS := $(SRCS:%.c=%)
-ARGS := data/pub08.in
+ARGS := data/pub01.in
 
 all: $(BINS)
 
@@ -17,7 +17,8 @@ $(OBJS): $(SRCS)
 	$(CC) $(CFLAGS) $< -c -o $@
 
 run: $(BINS)
-	./$(BINS) <$(ARGS) && cat $(ARGS)
+	./$(BINS) <$(ARGS)
+	# ./$(BINS) <$(ARGS) && cat $(ARGS)
 
 valgrind: $(BINS)
 	valgrind ./$(BINS) <$(ARGS)
