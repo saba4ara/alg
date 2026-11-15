@@ -6,7 +6,7 @@ CFLAGS += -Wall -pedantic -g -O2
 SRCS := procdata.c
 OBJS := procdata.o
 BINS := procdata
-ARGS := data/pub01.in
+ARGS := pub01
 
 all: $(BINS)
 
@@ -17,10 +17,10 @@ $(OBJS): $(SRCS)
 	$(CC) $(CFLAGS) $< -c -o $@
 
 run: $(BINS)
-	./$(BINS) <$(ARGS)
+	./$(BINS) <data/$(ARGS).in
 
 valgrind: $(BINS)
-	valgrind ./$(BINS) <$(ARGS)
+	valgrind ./$(BINS) <data/$(ARGS).in
 
 clean:
 	rm -rf $(OBJS) $(BINS) *.tar
