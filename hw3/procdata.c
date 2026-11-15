@@ -1,11 +1,21 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
 
 
+#ifndef FAST_READ
+#define FAST_READ 1
+#endif
+
 #ifndef FIRST_NODE
 #define FIRST_NODE 1
+#endif
+
+#ifndef NEIGHBOURS_COUNT
+#define NEIGHBOURS_COUNT 3
 #endif
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -30,18 +40,17 @@ enum ComputerTypes {
 
 // STRUCTS ----------------------------------------------------------
 typedef struct {
-	unsigned int neighbours[3];
-	unsigned int degree;
-	unsigned int type;
-	bool is_used;
+	unsigned int neighbours[NEIGHBOURS_COUNT];
+	unsigned char degree;
+	unsigned char type;
 } Node;
 
 typedef struct {
 	unsigned int node_id;
 	unsigned int parent_id;
-	unsigned int next_neighbour_idx;
-	unsigned int count_E;
-	unsigned int count_V;
+	unsigned char next_neighbour_idx;
+	unsigned char count_E;
+	unsigned char count_V;
 } StackFrame;
 
 typedef struct {
@@ -52,12 +61,34 @@ typedef struct {
 
 
 // FUNCS ------------------------------------------------------------
+inline unsigned int read_uint() {
+	unsigned int res = 0;
+	int c = getchar_unlocked();
+
+	while ((c < '0' || c > '9') && c != EOF) c = getchar_unlocked();
+	
+	while (c >= '0' && c <= '9') {
+		res = res * 10 + (c - '0');
+		c = getchar_unlocked();
+	}
+
+	return res;
+}
+
 int parse_input(unsigned int* P, unsigned int* S, unsigned int* E, unsigned int* V, Node** graph) {
 	// 1st line
-	if (scanf("%u %u %u %u", P, S, E, V) != 4) {
-		puts("ERROR: Reading 1st line input.");
-		return INPUT_ERROR;
+	if (FAST_READ) {
+		*P = read_uint();
+		*S = read_uint();
+		*E = read_uint();
+		*V = read_uint();
+	} else {
+		if (scanf("%u %u %u %u", P, S, E, V) != 4) {
+			puts("ERROR: Reading 1st line input.");
+			return INPUT_ERROR;
+		} 
 	}
+
 
 	*graph = (Node*)malloc((*P+1) * sizeof(Node));
 	if (!graph) {
@@ -74,9 +105,8 @@ int parse_input(unsigned int* P, unsigned int* S, unsigned int* E, unsigned int*
 	for (int i = 1; i <= *P; ++i) {
 		(*graph)[i].degree = 0;
 		(*graph)[i].type = EMPTY;
-		(*graph)[i].is_used = false;
 
-		for (int j = 0; j < 3; ++j) {
+		for (int j = 0; j < NEIGHBOURS_COUNT; ++j) {
 			(*graph)[i].neighbours[j] = 0;
 		}
 	}	
@@ -85,9 +115,14 @@ int parse_input(unsigned int* P, unsigned int* S, unsigned int* E, unsigned int*
 	// S lines of computers' connections
 	for (int i = 1; i <= *S; ++i) {
 		unsigned int p1, p2;
-		if (scanf("%u %u", &p1, &p2) != 2) {
-			puts("ERROR: Reading computers' connections input.");
-			return INPUT_ERROR;
+		if (FAST_READ) {
+			p1 = read_uint();
+			p2 = read_uint();
+		} else {
+			if (scanf("%u %u", &p1, &p2) != 2) {
+				puts("ERROR: Reading computers' connections input.");
+				return INPUT_ERROR;
+			}
 		}
 
 		if (p1 < 1 || p1 > *P || p2 < 1 || p2 > *P) {
@@ -107,9 +142,13 @@ int parse_input(unsigned int* P, unsigned int* S, unsigned int* E, unsigned int*
 	// line with E extractors
 	for (int i = 0; i < *E; ++i) {
 		unsigned int e;
-		if (scanf("%u", &e) != 1) {
-			puts("ERROR: Reading extractor's value input.");
-			return INPUT_ERROR;
+		if (FAST_READ) {
+			e = read_uint();
+		} else {
+			if (scanf("%u", &e) != 1) {
+				puts("ERROR: Reading extractor's value input.");
+				return INPUT_ERROR;
+			}
 		}
 
 		if (e < 1) {
@@ -122,9 +161,13 @@ int parse_input(unsigned int* P, unsigned int* S, unsigned int* E, unsigned int*
 	// line with V validators
 	for (int i = 0; i < *V; ++i) {
 		unsigned int v;
-		if (scanf("%u", &v) != 1) {
-			puts("ERROR: Reading validator's value input.");
-			return INPUT_ERROR;
+		if (FAST_READ) {
+			v = read_uint();
+		} else {	
+			if (scanf("%u", &v) != 1) {
+				puts("ERROR: Reading validator's value input.");
+				return INPUT_ERROR;
+			}
 		}
 
 		if (v < 1) {
@@ -204,6 +247,7 @@ unsigned int solve_dfs(unsigned int root, unsigned int P, Node* graph) {
 	return pairs_count;
 }
 
+// debuging purposes only
 void print_graph(unsigned int* P, unsigned int* S, Node* graph) {
 	for (int i = 1; i <= *P; ++i ) {
 		printf("NODE %d\n", i);
@@ -217,7 +261,6 @@ void print_graph(unsigned int* P, unsigned int* S, Node* graph) {
 		
 		char* type = (graph[i].type == 0) ? "EXT" : ((graph[i].type == 1) ? "VAL" : "EMPTY");
 		printf("type = %s\n", type);
-		printf("is used = %d\n\n", graph[i].is_used);
 	}
 }
 
@@ -229,10 +272,8 @@ int main (int argc, char* argv[]) {
 	Node* graph;
 	
 	int res = parse_input(&P, &S, &E, &V, &graph);
-	// print_graph(&P, &S, graph);
-
 	unsigned int pairs_count = solve_dfs(FIRST_NODE, P, graph);
-	printf("%u\n", pairs_count);
+	printf("%u \n", pairs_count);
 	
 	free(graph);
 	return res;
