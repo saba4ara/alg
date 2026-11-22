@@ -34,14 +34,6 @@
 
 
 
-// ENUMS ------------------------------------------------------------
-enum Errors {
-	NO_ERROR,
-	INPUT_ERROR,
-	ALLOC_ERROR,
-	RANGE_ERROR
-};
-
 // FUNCS ------------------------------------------------------------
 static inline uint8_t read_bit();
 
@@ -57,6 +49,8 @@ void print_matrix(uint8_t* m, uint16_t R, uint16_t C);
 static inline uint32_t visual_to_actual(uint32_t visual_coord);
 
 uint8_t parse_input(uint16_t* R, uint16_t* C, uint16_t* F, uint32_t* S, uint32_t* T, uint8_t** m, uint32_t* f_count);
+
+uint32_t solve_bfs(uint8_t* m, uint16_t R, uint16_t C, uint16_t F, uint32_t* S, uint32_t* T);
 
 
 

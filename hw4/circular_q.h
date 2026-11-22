@@ -3,14 +3,18 @@
 
 
 
+#include "common.h"
+
+
+
 #ifndef CQ_SIZE
-#define CQ_SIZE 4
+#define CQ_SIZE 1024
 #endif
 
 
 
 typedef struct {
-	int* content;
+	State* content;
 
 	unsigned int head;
 	unsigned int tail;
@@ -25,16 +29,16 @@ void init(CQueue* cq);
 
 void resize(CQueue* cq);
 
-void push(CQueue* cq, int x);
+void push(CQueue* cq, State x);
 
 // size > 0
-int pop(CQueue* cq);
+State pop(CQueue* cq);
 
 // size > 0
-int get_tail(CQueue* cq);
+State get_tail(CQueue* cq);
 
 // size > 0
-int get_head(CQueue* cq);
+State get_head(CQueue* cq);
 
 void print_cq(CQueue* cq);
 

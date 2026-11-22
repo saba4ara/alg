@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 
 
@@ -13,7 +14,7 @@ int main(int argc, char* argv[]) {
 	uint8_t* m;
 	
 	uint32_t f_count = 0;
-	uint32_t best_path_len = 0;
+	uint32_t best_path = 0;
 
 	uint8_t res = 0;
 	res = parse_input(&R, &C, &F, S, T, &m, &f_count);
@@ -25,21 +26,14 @@ int main(int argc, char* argv[]) {
 	uint32_t min_path = ((T[0] >= S[0]) ? (T[0] - S[0]) : (S[0] - T[0])) + ((T[1] >= S[1]) ? (T[1] - S[1]) : (S[1] - T[1]));
 	
 	if (min_path <= F || f_count <= F) {
-		printf("%u \n", min_path);
+		printf("%u\n", min_path);
 		free(m);
 		return res;
 	}
 
-	
+	best_path = solve_bfs(m, R, C, F, S, T);
+	printf("%u\n", best_path);
 
-	CQueue cq;
-	init(&cq);
-
-	// 
-
-
-
-	destroy(&cq);
 	free(m);
 	return res;
 }
@@ -168,5 +162,74 @@ uint8_t parse_input(uint16_t* R, uint16_t* C, uint16_t* F, uint32_t* S, uint32_t
 
 	return NO_ERROR;
 
+}
+
+uint32_t solve_bfs(uint8_t* m, uint16_t R, uint16_t C, uint16_t F, uint32_t* S, uint32_t* T) {
+	size_t grid_size = (size_t)R * C;
+	uint8_t* min_fires = (uint8_t*)malloc(grid_size * sizeof(uint8_t));
+	if (!min_fires) {
+		fputs("ERROR: min_fires allocation.\n", stderr);
+		exit(ALLOC_ERROR);
+	}
+
+	memset(min_fires, (int)(F + 1), grid_size);
+
+	uint32_t start_idx = S[0] * C + S[1];
+	uint32_t target_idx = T[0] * C + T[1];
+
+	if (start_idx == target_idx) {
+		free(min_fires);
+		return 0;
+	}
+
+	CQueue cq;
+	init(&cq);
+
+	min_fires[start_idx] = 0;
+	State start = {(uint16_t)S[0], (uint16_t)S[1], 0};
+	push(&cq, start);
+	
+	static const int dr[4] = {-1, 1, 0, 0};
+	static const int dc[4] = {0, 0, -1, 1};
+
+	uint32_t distance = 0;
+
+	while (cq.size > 0) {
+		unsigned int layer_size = cq.size;
+		distance++;
+
+		for (unsigned int i = 0; i < layer_size; ++i) {
+			State curr = pop(&cq);
+			uint32_t curr_idx = (uint32_t)curr.r * C + curr.c;
+
+			if (curr.fires > min_fires[curr_idx]) continue;
+
+			for (int d = 0; d < 4; ++d) {
+				int nr = (int)curr.r + dr[d];
+				int nc = (int)curr.c + dc[d];
+
+				if (nr < 0 || nr >= (int)R || nc < 0 || nc >= (int)C) continue;
+
+				uint32_t next_idx = (uint32_t)nr * C + (uint32_t)nc;
+				uint8_t next_fires = (uint8_t)(curr.fires + m[next_idx]);
+
+				if (next_fires < min_fires[next_idx]) {
+					if (next_idx == target_idx) {
+						free(min_fires);
+						destroy(&cq);
+						return distance;
+					}
+
+					min_fires[next_idx] = next_fires;
+					State next_state = {(uint16_t)nr, (uint16_t)nc, next_fires};
+					push(&cq, next_state);
+				}
+			}
+		}
+	}
+
+	free(min_fires);
+	destroy(&cq);
+	return 0;
 }
 
