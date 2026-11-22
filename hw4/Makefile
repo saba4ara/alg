@@ -6,7 +6,7 @@ CFLAGS += -Wall -Wextra -Wconversion -pedantic -g -O2
 SANFLAGS += -fsanitize=address,undefined 
 
 SRCS := $(wildcard *.c)
-HEADS := $(SRCS:.c=.h)
+HEADS := $(wildcard *.h)
 OBJS := $(SRCS:.c=.o)
 
 BIN := rescue
