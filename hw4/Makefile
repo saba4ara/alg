@@ -1,30 +1,38 @@
-.PHONY: all run valgrind clean tar
+.PHONY: all run san clean tar
 .SILENT: run
 
 CC := gcc
-CFLAGS += -Wall -pedantic -g -O2
-SRCS := rescue.c
-OBJS := rescue.o
-BINS := rescue
+CFLAGS += -Wall -Wextra -Wconversion -pedantic -g -O2
+SANFLAGS += -fsanitize=address,undefined 
+
+SRCS := $(wildcard *.c)
+HEADS := $(SRCS:.c=.h)
+OBJS := $(SRCS:.c=.o)
+
+BIN := rescue
+SAN_BIN := $(BIN)_san
 ARGS := pub01
 
-all: $(BINS)
+all: $(BIN)
 
-$(BINS): $(OBJS)
-	$(CC) $(CFLAGS) $< -o $@
+$(BIN): $(OBJS)
+	$(CC) $(CFLAGS) $^ -o $@
 
-$(OBJS): $(SRCS)
-	$(CC) $(CFLAGS) $< -c -o $@
+$(OBJS): %.o: %.c $(HEADS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-run: $(BINS)
-	./$(BINS) <data/$(ARGS).in
+$(SAN_BIN): $(SRCS) $(HEADS)
+	$(CC) $(CFLAGS) $(SANFLAGS) $(SRCS) -o $@
 
-valgrind: $(BINS)
-	valgrind ./$(BINS) <data/$(ARGS).in
+run: $(BIN)
+	./$(BIN) <data/$(ARGS).in
+
+san: $(SAN_BIN)
+	./$(SAN_BIN) <data/$(ARGS).in
 
 clean:
-	rm -rf $(OBJS) $(BINS) *.tar
+	rm -rf $(OBJS) $(BIN) $(SAN_BIN) $(BIN).tar
 
 tar:
-	tar -cvf $(BINS).tar $(SRCS)
+	tar -cvf $(BIN).tar $(SRCS) $(HEADS)
 
